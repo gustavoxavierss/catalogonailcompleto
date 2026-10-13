@@ -13,8 +13,10 @@
 
 ## Pagamentos
 
-- [ ] Receber documentação oficial QIpay/Qiapay e implementar o adaptador.
-- [ ] Configurar segredos apenas no servidor.
+- [ ] Criar o projeto Supabase exclusivo e aplicar/verificar a migração.
+- [ ] Confirmar IDs e valores dos checkouts avulso/recorrente na Wiapy.
+- [ ] Definir um token forte e configurá-lo no campo de autenticação do webhook e na variável Vercel `QIAPAY_WEBHOOK_SECRET`.
+- [ ] Implementar e homologar o adaptador com base no payload oficial; manter fechado se a associação por e-mail/checkout não for inequívoca.
 - [ ] Homologar todos os cenários descritos em `GATEWAY.md`.
 - [ ] Cadastrar webhook HTTPS e confirmar retries e resposta esperada.
 - [ ] Testar concorrência e conciliação após timeout.
@@ -34,7 +36,7 @@
 - [x] Sem aprovação baseada em URL, localStorage ou callback do frontend.
 - [ ] Repetir ataques de IDOR usando duas contas reais no Supabase de homologação.
 - [ ] Testar isolamento dos buckets reais e acesso direto aos arquivos.
-- [ ] Testar assinatura/replay reais do webhook quando o contrato existir.
+- [ ] Testar autenticação por token, deduplicação e os estados documentados do webhook.
 - [ ] Validar cabeçalhos e limites de tamanho no domínio final.
 - [ ] Revisar logs, alertas, backup/restauração e política de retenção.
 
@@ -59,6 +61,7 @@
 - [ ] Monitorar `pdf_jobs` pendentes/falhos e estabelecer retentativas proativas.
 - [ ] Testar restauração de backup em ambiente separado.
 - [ ] Confirmar custo e capacidade dos provedores para volume esperado.
+- [ ] Conectar o projeto Vercel ao repositório GitHub para deploy automático e testar um push de homologação.
 - [ ] Promover a versão homologada para produção e executar smoke test final.
 
 **Estado:** a base está implementada e testada localmente; a operação comercial aguarda conexão dos serviços e homologação real. Checklists marcados acima indicam implementação e testes locais, não auditoria da infraestrutura externa ainda ausente.

@@ -4,9 +4,9 @@ Aplicação Next.js/React/TypeScript para criação de catálogos de serviços, 
 
 ## Estado da entrega
 
-Atualização solicitada: imagem original de Mikaelly na apresentação, cards avulso e mensal (R$ 15,99), links Wiapy fornecidos centralizados em `src/lib/offers.ts`. A assinatura ainda não concede permissões: depende do contrato oficial de eventos e renovações. Os cards avisam que a ativação está em configuração antes de mostrar o link externo. Veja `docs/GATEWAY.md`. A landing foi publicada na Vercel em `https://catalogonailcompleto.vercel.app` (build com status READY). Webhook: `https://catalogonailcompleto.vercel.app/api/payments/webhook/qiapay`; ele continuará fechado até a integração oficial ser implementada e homologada. O código está em um commit Git local, pronto para ser enviado a um repositório GitHub.
+Imagem original de Mikaelly aplicada à apresentação, com cards de compra avulsa e mensal (R$ 15,99) e links Wiapy em `src/lib/offers.ts`. O projeto está no branch `main` do GitHub (`gustavoxavierss/catalogonailcompleto`) e há um deploy READY na Vercel em `https://catalogonailcompleto.vercel.app`. O webhook cadastrado é `https://catalogonailcompleto.vercel.app/api/payments/webhook/qiapay`.
 
-O código da aplicação, migração, testes e guias estão implementados. **Não considerar a operação comercial liberada:** a instância Supabase deste produto ainda precisa ser criada/conectada; a QIpay/Qiapay não foi integrada porque sua documentação oficial não foi fornecida. Nenhum pagamento é simulado. O adaptador atual falha de forma fechada, e nenhum PDF de cliente pode ser liberado por ele.
+O código da aplicação, migração, testes e guias estão implementados. **Não considerar a operação comercial liberada:** ainda não há um projeto Supabase exclusivo conectado. A central oficial Wiapy documenta POST JSON, o header `Authorization`, estados de pagamento em centavos e dados de assinatura; ela não documenta na página disponível criação/consulta de cobranças, referência de pedido, assinatura criptográfica ou ID independente do evento. O endpoint segue fechado, nenhum pagamento é simulado e nenhum PDF é liberado por ele. Veja `docs/GATEWAY.md`.
 
 Sem configuração, a landing e as páginas públicas funcionam; ações dependentes do Supabase retornam uma mensagem de preparação. Os testes de banco usam um PostgreSQL isolado em PGlite, sem alterar bancos existentes. Os testes de editor usam respostas controladas exclusivamente no navegador de testes, fora da aplicação publicada.
 
@@ -76,9 +76,9 @@ Preencha `.env.local` com um projeto Supabase exclusivo para este produto antes 
 | `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase |
 | `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Chave publicável (uma anon key legada também é aceita pelo SDK) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Somente servidor, chave com acesso privilegiado |
-| `QIAPAY_API_KEY` | Reservada para o adaptador oficial |
-| `QIAPAY_SECRET` | Reservada; só usar se exigida pela documentação |
-| `QIAPAY_WEBHOOK_SECRET` | Reservada para autenticação oficial de webhooks |
+| `QIAPAY_WEBHOOK_SECRET` | Token escolhido pelo produtor no campo “Token para autenticação” da Wiapy; a plataforma o envia no header `Authorization` |
+| `QIAPAY_SINGLE_CHECKOUT_ID` | ID do checkout avulso informado no payload oficial (`checkout.id`), necessário para permitir a associação do pedido |
+| `QIAPAY_MONTHLY_CHECKOUT_ID` | ID do checkout recorrente informado no payload oficial (`checkout.id`) |
 | `PAYMENT_PROVIDER` | `disabled`; mudar a variável sozinha **não** habilita pagamentos |
 
 `DATABASE_URL` não é necessária no runtime, pois o backend usa a API Supabase. Ferramentas de administração/migração podem solicitar conexão direta separadamente. Nenhum segredo real acompanha a entrega.
@@ -95,17 +95,17 @@ Preencha `.env.local` com um projeto Supabase exclusivo para este produto antes 
 8. Abra `/admin/configuracoes` e configure nome, preço, logo HTTPS e atendimento.
 9. Execute os testes conectados em homologação antes de divulgar.
 
-## QIpay/Qiapay
+## Wiapy
 
 Leia `docs/GATEWAY.md`. Ponto de conexão: `src/lib/payments/provider.ts`. Não há endpoint, assinatura, evento ou credencial inventada.
 
-Webhook a cadastrar após implementar e homologar o adaptador:
+URL cadastrada na integração:
 
 ```text
-https://SEU_DOMINIO/api/payments/webhook/qiapay
+https://catalogonailcompleto.vercel.app/api/payments/webhook/qiapay
 ```
 
-Antes disso, o endpoint retorna 503 e não altera pagamentos.
+O endpoint ainda retorna 503 até o Supabase, o token, os IDs reais dos checkouts e o fluxo de associação por e-mail serem configurados e homologados.
 
 ## Testes
 
