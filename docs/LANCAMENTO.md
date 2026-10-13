@@ -37,7 +37,7 @@
 - [ ] Repetir ataques de IDOR usando duas contas reais no Supabase de homologação.
 - [ ] Testar isolamento dos buckets reais e acesso direto aos arquivos.
 - [ ] Testar autenticação por token, deduplicação e os estados documentados do webhook.
-- [ ] Validar cabeçalhos e limites de tamanho no domínio final.
+- [ ] Validar o header `Authorization`, deduplicação e limites de tamanho no domínio final.
 - [ ] Revisar logs, alertas, backup/restauração e política de retenção.
 
 ## Fluxo de cliente

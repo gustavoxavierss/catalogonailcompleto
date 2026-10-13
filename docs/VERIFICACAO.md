@@ -22,7 +22,7 @@
 | Supabase Auth/Storage hospedados | Não verificado: projeto deste produto ainda não conectado |
 | SMTP e recuperação por e-mail | Não verificado: provedor ainda não configurado |
 | Wiapy webhook | Contrato público revisado; integração ainda desativada, sem token/IDs e sem homologação |
-| Assinatura HMAC/replay | A documentação pública consultada não descreve esses mecanismos |
+| HMAC/timestamp anti-replay | A documentação pública consultada não descreve esses mecanismos |
 | Compra → geração → download de ponta a ponta | Pendente em homologação real |
 
 ## Casos de segurança exercitados

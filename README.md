@@ -97,7 +97,7 @@ Preencha `.env.local` com um projeto Supabase exclusivo para este produto antes 
 
 ## Wiapy
 
-Leia `docs/GATEWAY.md`. Ponto de conexão: `src/lib/payments/provider.ts`. Não há endpoint, assinatura, evento ou credencial inventada.
+Leia `docs/GATEWAY.md`. Ponto de conexão: `src/lib/payments/provider.ts`. O contrato documentado e suas limitações estão registrados; o adaptador permanece desativado.
 
 URL cadastrada na integração:
 
