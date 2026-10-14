@@ -7,6 +7,7 @@ import { PaymentPanel } from "@/components/payment-panel";
 import { pageIdentity } from "@/lib/page-auth";
 import { AppError, ownedCatalog, settings, track } from "@/lib/server";
 import { Catalog, readyErrors } from "@/lib/catalog";
+import { wiapyConfigured } from "@/lib/payments/wiapy";
 export const dynamic = "force-dynamic";
 export const metadata = { robots: { index: false, follow: false } };
 export default async function CatalogPage({
@@ -67,6 +68,7 @@ export default async function CatalogPage({
           </>
         ) : (
           <PaymentPanel
+            paymentsReady={wiapyConfigured()}
             catalogId={id}
             price={config.priceCents}
             mode={action === "checkout" ? "checkout" : "payment"}

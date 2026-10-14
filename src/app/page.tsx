@@ -23,11 +23,11 @@ export default async function Landing() {
           <div>
             <div className="eyebrow">Seu talento merece ser visto</div>
             <h1 style={{ marginTop: 25 }}>
-              Seu trabalho é lindo.
+              Seu talento,
               <br />
-              Seu catálogo
+              em um catálogo
               <br />
-              também pode ser.
+              inesquecível.
             </h1>
             <p>
               Crie seu catálogo profissional de Nail Designer em poucos minutos
@@ -35,15 +35,19 @@ export default async function Landing() {
               profissional por apenas{" "}
               <strong>{money(config.priceCents)}</strong>.
             </p>
-            <Link className="button" href="/cadastro">
+            <Link className="button" href="/catalogo/novo">
               CRIAR MEU CATÁLOGO <ArrowUpRight size={18} />
             </Link>
+            <p className="small muted" style={{ marginTop: 16 }}>
+              Comece sem criar conta. Cadastre-se só quando quiser guardar seu
+              trabalho e conferir a prévia completa.
+            </p>
             <div className="trust">
               <span>
                 <Check size={14} /> Avulso sem mensalidade
               </span>
               <span>
-                <Check size={14} /> Comece gratuitamente
+                <Check size={14} /> Comece sem cadastro
               </span>
             </div>
           </div>
@@ -51,7 +55,15 @@ export default async function Landing() {
             className="hero-art"
             aria-label="Referência de catálogo profissional"
           >
-            <Image className="hero-catalog-image" src="/catalogo-mikaelly.png" alt="Catálogo de procedimentos de Mikaelly, com fotos de unhas e apresentação profissional em tons rosé e bege" width={423} height={726} sizes="(max-width: 700px) 300px, 380px" priority />
+            <Image
+              className="hero-catalog-image"
+              src="/catalogo-mikaelly.png"
+              alt="Catálogo de procedimentos de Mikaelly, com fotos de unhas e apresentação profissional em tons rosé e bege"
+              width={423}
+              height={726}
+              sizes="(max-width: 700px) 300px, 380px"
+              priority
+            />
             <div className="floating-note">
               <span className="round-icon">
                 <Check size={18} />
@@ -107,10 +119,13 @@ export default async function Landing() {
                 "Dê o seu toque",
                 "Escolha entre quatro estilos e personalize as cores.",
               ],
-              ["Confira como ficou", "Veja a prévia completa antes de pagar."],
               [
-                `Libere por ${money(config.priceCents)}`,
-                "Um único pagamento, sem mensalidade.",
+                "Guarde seu trabalho",
+                "Crie sua conta gratuita para salvar e ver a prévia completa.",
+              ],
+              [
+                "Escolha seu plano",
+                `Avulso por ${money(config.priceCents)} ou assinatura para manter seu catálogo atualizado.`,
               ],
               [
                 "Baixe seu PDF",
@@ -132,7 +147,7 @@ export default async function Landing() {
           <p className="muted">
             Suas próximas clientes vão adorar conhecer seu trabalho.
           </p>
-          <Link className="button" href="/cadastro">
+          <Link className="button" href="/catalogo/novo">
             Comece agora <ArrowUpRight size={18} />
           </Link>
         </section>

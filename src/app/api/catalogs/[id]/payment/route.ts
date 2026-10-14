@@ -5,8 +5,6 @@ import {
   ownedCatalog,
   sameOrigin,
 } from "@/lib/server";
-import { provider } from "@/lib/payments/provider";
-import { confirmPayment } from "@/lib/payments/service";
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -14,19 +12,47 @@ export async function GET(
   try {
     const { user } = await identity();
     const { id } = await params;
-    await ownedCatalog(id, user.id);
-    const { data, error } = await adminDb()
-      .from("orders")
-      .select(
-        "id,status,amount,created_at,version_id,checkout_url,pdf_files(id)",
-      )
-      .eq("catalog_id", id)
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false })
-      .limit(20);
-    if (error) throw error;
+    const catalog = await ownedCatalog(id, user.id);
+    const db = adminDb();
+    const [orders, subscriptions] = await Promise.all([
+      db
+        .from("orders")
+        .select(
+          "id,status,amount,created_at,version_id,checkout_url,plan,subscription_id,pdf_files(id),catalog_versions(revision)",
+        )
+        .eq("catalog_id", id)
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(20),
+      db
+        .from("subscriptions")
+        .select("gateway_id,active,expires_at")
+        .eq("catalog_id", id)
+        .eq("user_id", user.id),
+    ]);
+    if (orders.error || subscriptions.error)
+      throw orders.error || subscriptions.error;
+    const active = (subscriptions.data || []).filter(
+      (s) => s.active && Date.parse(s.expires_at) > Date.now(),
+    );
     return Response.json(
-      { orders: data },
+      {
+        orders: orders.data.map((o) => ({
+          ...o,
+          isCurrent:
+            (Array.isArray(o.catalog_versions)
+              ? o.catalog_versions[0]
+              : o.catalog_versions
+            )?.revision === catalog.revision,
+          status:
+            o.status === "paid" &&
+            o.plan.startsWith("monthly") &&
+            !active.some((s) => s.gateway_id === o.subscription_id)
+              ? "expired"
+              : o.status,
+        })),
+        subscriptionActive: !!active.length,
+      },
       { headers: { "Cache-Control": "private, no-store" } },
     );
   } catch (e) {
@@ -39,23 +65,6 @@ export async function POST(
 ) {
   try {
     sameOrigin(req);
-    const { user } = await identity();
-    const { id } = await context.params;
-    await ownedCatalog(id, user.id);
-    const { data, error } = await adminDb()
-      .from("orders")
-      .select("*")
-      .eq("catalog_id", id)
-      .eq("user_id", user.id)
-      .in("status", ["pending", "processing"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    if (error) throw error;
-    if (data && provider.available) {
-      const event = await provider.getPaymentStatus(data);
-      await confirmPayment(event, JSON.stringify(event));
-    }
     return GET(req, context);
   } catch (e) {
     return failure(e);

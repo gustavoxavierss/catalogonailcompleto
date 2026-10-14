@@ -2,6 +2,7 @@ import "server-only";
 import { adminDb, AppError, track } from "./server";
 import { catalogSchema } from "./catalog";
 import { renderCatalogPdf } from "./pdf-engine";
+import { requireSubscriptionAccess } from "./subscription-access";
 export async function generatePaidPdf(orderId: string) {
   const db = adminDb();
   const { data: order, error } = await db
@@ -15,6 +16,7 @@ export async function generatePaidPdf(orderId: string) {
       "O pagamento precisa estar aprovado para gerar o PDF.",
       403,
     );
+  await requireSubscriptionAccess(order);
   const existing = await db
     .from("pdf_files")
     .select("*")
@@ -49,6 +51,7 @@ export async function generatePaidPdf(orderId: string) {
       .single();
     if (check.error || check.data.status !== "paid")
       throw new AppError("Este pagamento não está mais aprovado.", 403);
+    await requireSubscriptionAccess(order);
     const path = `${order.user_id}/${order.catalog_id}/${crypto.randomUUID()}.pdf`;
     const upload = await db.storage
       .from("catalog-pdfs")

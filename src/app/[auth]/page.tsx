@@ -9,8 +9,8 @@ const pages = {
   },
   cadastro: {
     mode: "register",
-    title: "Vamos criar seu catálogo?",
-    desc: "Comece gratuitamente. Você só paga ao liberar o PDF.",
+    title: "Salve seu catálogo e veja como ficou",
+    desc: "Crie sua conta gratuita. Depois, escolha o plano para liberar seu PDF.",
   },
   "recuperar-senha": {
     mode: "recover",

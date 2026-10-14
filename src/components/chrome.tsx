@@ -45,8 +45,7 @@ export async function Header({
               <a className="desktop" href="/#como-funciona">
                 Como funciona
               </a>
-              <Link href="/login">Entrar</Link>
-              <Link className="button secondary" href="/cadastro">
+              <Link className="button secondary" href="/catalogo/novo">
                 Começar agora <span aria-hidden>↗</span>
               </Link>
             </>

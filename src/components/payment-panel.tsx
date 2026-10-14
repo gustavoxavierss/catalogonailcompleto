@@ -1,6 +1,5 @@
 "use client";
 import Link from "next/link";
-import { PlanCards } from "@/components/plan-cards";
 import { useCallback, useEffect, useState } from "react";
 import {
   Check,
@@ -9,28 +8,36 @@ import {
   LockKeyhole,
   Sparkles,
 } from "lucide-react";
+import { PlanCards } from "./plan-cards";
 import { money, paymentLabels, hasPdf } from "@/lib/catalog";
 type Order = {
   id: string;
   status: string;
   amount: number;
   created_at: string;
-  pdf_files: { id: string }[] | {id:string} | null;
+  pdf_files: { id: string }[] | { id: string } | null;
+  plan: string;
+  isCurrent: boolean;
 };
 export function PaymentPanel({
   catalogId,
   price,
   mode,
   errors = [],
+  paymentsReady = false,
 }: {
   catalogId: string;
   price: number;
   mode: "checkout" | "payment";
   errors?: string[];
+  paymentsReady?: boolean;
 }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState(""),
     [orders, setOrders] = useState<Order[]>([]);
+  const [checkoutUrl, setCheckoutUrl] = useState(""),
+    [waiting, setWaiting] = useState(mode === "payment"),
+    [active, setActive] = useState(false);
   const refresh = useCallback(
     async (verify = false) => {
       try {
@@ -41,51 +48,65 @@ export function PaymentPanel({
         const d = await r.json();
         if (!r.ok) throw new Error(d.error);
         setOrders(d.orders);
-        if (verify && !d.orders.some((o: Order) => o.status === "paid"))
-          setMessage("Seu pagamento ainda não foi identificado.");
-      } catch (e) {
-        setMessage(e instanceof Error ? e.message : "Tente novamente.");
+        setActive(d.subscriptionActive);
+        if (
+          verify &&
+          !d.orders.some((o: Order) => o.status === "paid" && o.isCurrent)
+        )
+          setMessage(
+            "Seu pagamento ainda não foi identificado. Assim que a confirmação chegar, seu PDF será liberado aqui.",
+          );
+      } catch {
+        setMessage(
+          "Não conseguimos atualizar o pagamento agora. Tente novamente em instantes.",
+        );
       }
     },
     [catalogId],
   );
   useEffect(() => {
-    if (mode !== "payment") return;
     void refresh();
-    const timer = setInterval(() => {
+    if (!waiting) return;
+    const t = setInterval(() => {
       if (document.visibilityState === "visible") void refresh();
     }, 12000);
-    return () => clearInterval(timer);
-  }, [mode, refresh]);
-  async function checkout() {
+    return () => clearInterval(t);
+  }, [refresh, waiting]);
+  async function checkout(plan: "single" | "monthly") {
     setBusy(true);
     setMessage("");
     try {
       const r = await fetch(`/api/catalogs/${catalogId}/checkout`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan }),
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
-      location.href = d.redirect;
+      if (d.redirect) {
+        location.href = d.redirect;
+        return;
+      }
+      setCheckoutUrl(d.checkoutUrl);
+      setWaiting(true);
+      setMessage(
+        "Seu pedido foi salvo. Abra o pagamento abaixo; esta página acompanhará a confirmação automaticamente.",
+      );
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Tente novamente.");
+    } finally {
       setBusy(false);
     }
   }
-  async function download(order: Order) {
+  async function download(o: Order) {
     setBusy(true);
     setMessage("Preparando seu catálogo com carinho…");
     try {
-      const r = await fetch(`/api/orders/${order.id}/download`, {
-        method: "POST",
-      });
-      if (!r.ok) {
-        const d = await r.json();
-        throw new Error(d.error);
-      }
-      const { url } = await r.json();
+      const r = await fetch(`/api/orders/${o.id}/download`, { method: "POST" }),
+        d = await r.json();
+      if (!r.ok) throw new Error(d.error);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = d.url;
       a.download = "meu-catalogo.pdf";
       a.click();
       setMessage("Seu download foi iniciado. Agora é só compartilhar!");
@@ -96,118 +117,107 @@ export function PaymentPanel({
       setBusy(false);
     }
   }
-  const paid = orders.filter((o) => o.status === "paid");
+  const paid = orders.filter((o) => o.status === "paid"),
+    current = paid.some((o) => o.isCurrent);
   return (
-    <div className="checkout card">
+    <div className="card checkout" style={{ maxWidth: 1000 }}>
       <span className="round-icon">
         <Sparkles size={28} />
       </span>
       <h2 style={{ marginTop: 22 }}>
-        {paid.length
-          ? "Pagamento aprovado! 🎉"
-          : mode === "payment"
-            ? "Falta só um passo"
-            : "Seu catálogo está pronto! 💅"}
+        {current ? "Pagamento aprovado! 🎉" : "Seu catálogo está pronto! 💅"}
       </h2>
       <p className="muted">
-        {paid.length
-          ? "Seu catálogo foi liberado. Gere e baixe sua versão profissional."
-          : mode === "payment"
-            ? "Seu pagamento ainda não foi identificado. Você pode conferir novamente ou continuar para o pagamento."
-            : "Seu catálogo profissional está pronto para ser gerado. Faça um pagamento único para liberar o PDF completo em alta qualidade."}
+        {current
+          ? "Seu catálogo foi liberado. Agora é só baixar e compartilhar."
+          : "Escolha o pagamento único ou a assinatura mensal para gerar e baixar seu PDF profissional."}
       </p>
-      {!paid.length && (
-        <>
-          <div className="price-big">{money(price)}</div>
-          <p className="muted small">Pagamento único · Sem mensalidade</p>
-          <div className="feature-list">
-            {[
-              "PDF profissional",
-              "Alta qualidade",
-              "Pronto para compartilhar",
-              "Pagamento único",
-            ].map((v) => (
-              <span key={v}>
-                <Check size={17} />
-                {v}
-              </span>
-            ))}
-          </div>
-        </>
-      )}
       {errors.length > 0 && (
         <div className="message error" role="alert">
           {errors.map((e) => (
             <p key={e}>{e}</p>
           ))}
           <Link href={`/catalogo/${catalogId}/editar`}>
-            <u>Completar meu catálogo</u>
+            Completar meu catálogo
           </Link>
         </div>
       )}
       {message && (
-        <div className="message" role="status">
+        <p className="message" role="status">
           {message}
-        </div>
+        </p>
       )}
-      {paid.length ? (
-        paid.map((o, i) => (
-          <div key={o.id} style={{ marginBottom: 20 }}>
-            <p className="small muted">
-              Compra de {new Date(o.created_at).toLocaleDateString("pt-BR")} ·{" "}
-              {money(o.amount)}
-              {i > 0 ? " · versão anterior" : ""}
-            </p>
-            <button
-              className="full"
-              disabled={busy}
-              onClick={() => download(o)}
-            >
-              {busy ? (
-                <LoaderCircle className="spinning" size={18} />
-              ) : (
-                <Download size={18} />
-              )}{" "}
-                {hasPdf(o.pdf_files)
-                ? "BAIXAR MEU CATÁLOGO"
-                : "GERAR E BAIXAR PDF"}
-            </button>
-          </div>
-        ))
-      ) : (
-        <>
-          <button
-            className="full"
-            disabled={busy || !!errors.length}
-            onClick={checkout}
-          >
-            {busy && <LoaderCircle className="spinning" size={18} />}LIBERAR MEU
-            CATÁLOGO POR {money(price)}
+      {!paymentsReady && !active && !current && (
+        <p className="message">
+          A liberação do PDF estará disponível em breve. Seu catálogo já está
+          salvo e você pode continuar editando.
+        </p>
+      )}
+      {active && !current && (
+        <button
+          className="full"
+          disabled={busy || !!errors.length}
+          onClick={() => checkout("monthly")}
+        >
+          <Check size={18} /> Gerar esta versão com minha assinatura
+        </button>
+      )}
+      {!current && !active && (
+        <PlanCards
+          compact
+          price={price}
+          onChoose={checkout}
+          disabled={busy || !!errors.length || !paymentsReady}
+        />
+      )}
+      {checkoutUrl && !current && (
+        <a
+          className="button full"
+          href={checkoutUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          ABRIR PAGAMENTO SEGURO ↗
+        </a>
+      )}
+      {waiting && !current && (
+        <button
+          className="secondary full"
+          style={{ marginTop: 12 }}
+          disabled={busy}
+          onClick={() => void refresh(true)}
+        >
+          VERIFICAR PAGAMENTO
+        </button>
+      )}
+      {paid.map((o) => (
+        <div key={o.id} className="message">
+          <p>
+            {o.isCurrent ? "Seu catálogo atual" : "Versão anterior"} ·{" "}
+            {money(o.amount)}
+            {o.plan === "monthly_access" ? " · incluída na assinatura" : ""}
+          </p>
+          <button className="full" disabled={busy} onClick={() => download(o)}>
+            {busy ? (
+              <LoaderCircle className="spinning" size={18} />
+            ) : (
+              <Download size={18} />
+            )}{" "}
+            {hasPdf(o.pdf_files) ? "BAIXAR MEU CATÁLOGO" : "GERAR E BAIXAR PDF"}
           </button>
-          {mode === "payment" && (
-            <button
-              className="secondary full"
-              style={{ marginTop: 12 }}
-              onClick={() => void refresh(true)}
-              disabled={busy}
-            >
-              VERIFICAR PAGAMENTO
-            </button>
-          )}
-        </>
-      )}
+        </div>
+      ))}
       {orders
         .filter((o) => o.status !== "paid")
         .map((o) => (
-          <p key={o.id} className="small muted" style={{ marginTop: 18 }}>
+          <p className="small muted" key={o.id}>
             {paymentLabels[o.status]} · {money(o.amount)}
           </p>
         ))}
       <p className="small muted" style={{ marginTop: 20 }}>
-        <LockKeyhole size={13} /> O PDF só é liberado após a confirmação do
+        <LockKeyhole size={13} /> O PDF só é liberado após confirmação real do
         pagamento.
       </p>
-      {!paid.length && <PlanCards price={price} compact />}
       <Link className="button ghost" href={`/catalogo/${catalogId}/editar`}>
         Voltar ao catálogo
       </Link>

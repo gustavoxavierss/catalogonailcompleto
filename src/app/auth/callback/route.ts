@@ -11,7 +11,7 @@ export async function GET(req: Request) {
         new URL(
           url.searchParams.get("next") === "/redefinir-senha"
             ? "/redefinir-senha"
-            : "/dashboard",
+            : "/catalogo/continuar",
           process.env.APP_URL || url.origin,
         ),
       );

@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import { GuestContext, useImageSource } from "./guest-context";
 import {
   ArrowDown,
   ArrowUp,
@@ -62,6 +63,8 @@ function Upload({
   value: CatalogImage | null;
   onChange: (v: CatalogImage | null) => void;
 }) {
+  const guest = useContext(GuestContext);
+  const imageSource = useImageSource();
   const [progress, setProgress] = useState<number | null>(null),
     [error, setError] = useState("");
   const latestChange = useRef(onChange);
@@ -70,7 +73,7 @@ function Upload({
     <div>
       <div className="upload-box">
         {value ? (
-          <img src={`/api/images/${value.id}`} alt={label} />
+          <img src={imageSource(value.id)} alt={label} />
         ) : (
           <ImagePlus size={25} style={{ color: "#a48173", marginBottom: 12 }} />
         )}
@@ -93,6 +96,18 @@ function Upload({
             }
             setError("");
             setProgress(0);
+            if (guest) {
+              guest
+                .upload(file)
+                .then((img) => latestChange.current(img))
+                .catch(() =>
+                  setError(
+                    "Não conseguimos preparar essa foto. Escolha um JPG, PNG ou WebP válido.",
+                  ),
+                )
+                .finally(() => setProgress(null));
+              return;
+            }
             const req = new XMLHttpRequest();
             req.open("POST", `/api/catalogs/${catalogId}/images`);
             req.upload.onprogress = (e) => {
@@ -156,6 +171,9 @@ function move<T>(list: T[], from: number, to: number) {
   return next;
 }
 export function Editor({ id, initial, revision }: Props) {
+  const guest = useContext(GuestContext);
+  const guestRef = useRef(guest);
+  guestRef.current = guest;
   const [doc, setDoc] = useState(initial),
     [step, setStep] = useState(0),
     [status, setStatus] = useState("Salvo ✓"),
@@ -183,6 +201,11 @@ export function Editor({ id, initial, revision }: Props) {
         }
         setStatus("Salvando…");
         try {
+          if (guestRef.current) {
+            await guestRef.current.save(next);
+            setError("");
+            continue;
+          }
           const res = await fetch(`/api/catalogs/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -252,7 +275,8 @@ export function Editor({ id, initial, revision }: Props) {
       setError(errors.join(" "));
       return;
     }
-    location.href = `/catalogo/${id}/checkout`;
+    if (guestRef.current) guestRef.current.finish();
+    else location.href = `/catalogo/${id}/checkout`;
   }
   const service = (
     index: number,
@@ -965,7 +989,20 @@ export function Editor({ id, initial, revision }: Props) {
                 Esta é sua prévia. O PDF final é liberado após a confirmação do
                 pagamento.
               </p>
-              <CatalogPreview document={doc} />
+              {guest && (
+                <p className="message">
+                  Seu catálogo tem {doc.services.length} serviço(s). Clique em
+                  “Gerar meu catálogo” para continuar e salvar na sua conta
+                  gratuita.
+                </p>
+              )}
+              <div
+                className={guest ? "editor-blur" : undefined}
+                aria-hidden={guest ? true : undefined}
+                inert={guest ? true : undefined}
+              >
+                <CatalogPreview document={doc} />
+              </div>
             </>
           )}
           <div className="wizard-footer">

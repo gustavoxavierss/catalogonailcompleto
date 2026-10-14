@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { settings } from "@/lib/server";
+export const dynamic = "force-dynamic";
 export async function generateMetadata(): Promise<Metadata> {
   const platform = await settings();
   return {

@@ -237,4 +237,6 @@ export const paymentLabels: Record<string, string> = {
   refunded: "Pagamento reembolsado",
   expired: "Pagamento expirado",
 };
-export function hasPdf(files:unknown){return Array.isArray(files)?files.length>0:!!files;}
+export function hasPdf(files: unknown) {
+  return Array.isArray(files) ? files.length > 0 : !!files;
+}

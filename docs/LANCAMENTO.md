@@ -1,67 +1,22 @@
 # Checklist de lançamento
 
-## Ambiente
+## Configurado
+Site e GitHub existentes; Supabase restaurado; esquema nail_catalog com RLS; storage privado; ponte assinada; editor sem conta e importação; planos avulso e mensal; adaptador Wiapy; proteção de PDF e período mensal.
 
-- [ ] Criar/conectar o projeto Supabase exclusivo do produto.
-- [ ] Aplicar a migração e executar advisors de segurança no projeto real.
-- [ ] Configurar variáveis em homologação e produção separadamente.
-- [ ] Configurar domínio HTTPS e `APP_URL` exato.
-- [ ] Configurar SMTP, confirmação de e-mail e URLs de retorno.
-- [ ] Habilitar proteção contra abuso/captcha no Auth conforme operação.
-- [ ] Cadastrar administrador pelo banco, sem role editável pela usuária.
-- [ ] Conferir nome, logo, preço e suporte em `/admin/configuracoes`.
-
-## Pagamentos
-
-- [ ] Criar o projeto Supabase exclusivo e aplicar/verificar a migração.
-- [ ] Confirmar IDs e valores dos checkouts avulso/recorrente na Wiapy.
-- [ ] Definir um token forte e configurá-lo no campo de autenticação do webhook e na variável Vercel `QIAPAY_WEBHOOK_SECRET`.
-- [ ] Implementar e homologar o adaptador com base no payload oficial; manter fechado se a associação por e-mail/checkout não for inequívoca.
-- [ ] Homologar todos os cenários descritos em `GATEWAY.md`.
-- [ ] Cadastrar webhook HTTPS e confirmar retries e resposta esperada.
-- [ ] Testar concorrência e conciliação após timeout.
-- [ ] Habilitar o provider somente após aprovação dos testes.
+## Pendências obrigatórias
+- Autorizar armazenamento de SUPABASE_BRIDGE_PRIVATE_KEY no projeto catalogonailcompleto da Vercel, ambiente production. A revisão automática bloqueou o envio desse segredo; nenhum contorno foi usado.
+- Configurar token forte no painel Wiapy e o mesmo QIAPAY_WEBHOOK_SECRET na Vercel; ativar PAYMENT_PROVIDER=wiapy.
+- Homologar compra real, renovação, recusa, estorno e evento duplicado.
+- Validar recuperação por e-mail com SMTP e redirects de produção.
+- Ativar proteção contra senhas vazadas no Supabase, se disponível.
+- Definir administrador, suporte e identificação da empresa nos termos/privacidade.
+- Definir backup, retenção, alertas e limpeza de arquivos órfãos.
+- Liberar espaço no notebook para desenvolvimento contínuo; só cache deste projeto foi removido.
 
 ## Segurança
+Não expor service role/chave privada. Não liberar PDF por callback. Manter RLS, buckets privados, HTTPS e cookies seguros. Validar conta cruzada, PDF sem pagamento, webhook forjado e admin sem permissão. Revisar privilégios legados do hotel antes de compartilhar esse projeto com outros produtos.
 
-- [x] RLS definida em todas as tabelas públicas da migração.
-- [x] Escrita financeira e administrativa negada aos papéis anon/authenticated.
-- [x] Rotas de catálogo, imagem e download verificam a identidade e o proprietário.
-- [x] Valor do pedido obtido da configuração do servidor.
-- [x] ID único do evento e confirmação transacional.
-- [x] Snapshot da compra preservado após editar o catálogo.
-- [x] PDF privado, com arquivo aleatório e autorização antes do link de 60 segundos.
-- [x] Upload decodificado/regravado, limitação de pixels, remoção de metadados por reencode.
-- [x] Sem SDK privilegiado ou segredos no código do navegador.
-- [x] Sem aprovação baseada em URL, localStorage ou callback do frontend.
-- [ ] Repetir ataques de IDOR usando duas contas reais no Supabase de homologação.
-- [ ] Testar isolamento dos buckets reais e acesso direto aos arquivos.
-- [ ] Testar autenticação por token, deduplicação e os estados documentados do webhook.
-- [ ] Validar o header `Authorization`, deduplicação e limites de tamanho no domínio final.
-- [ ] Revisar logs, alertas, backup/restauração e política de retenção.
+O domínio público respondeu HTTP 200; não é necessário desligar SSO da conta Vercel para acessá-lo. Site público não significa backend e cobrança ativados.
 
-## Fluxo de cliente
 
-- [ ] Cadastro, confirmação por e-mail, login e recuperação via SMTP real.
-- [ ] Upload de logo, retrato, capa e várias fotos reais.
-- [ ] Reabrir catálogo salvo, perder conexão, recuperar conexão e testar duas abas.
-- [ ] Adicionar/remover serviços e categorias, reordenar e trocar estilos.
-- [ ] Pagamento completo de sandbox e geração automática do PDF.
-- [ ] Download no Android e iPhone; abertura em leitores de PDF comuns.
-- [ ] PDF com muitos serviços, textos longos, fotos verticais/horizontais e links.
-- [ ] Expiração de link de download e bloqueio após reembolso.
-- [ ] Painel administrativo com dados reais e busca/paginação.
-
-## Privacidade e operação
-
-- [ ] Publicar razão social/CNPJ e contato do controlador.
-- [ ] Revisar termos/política, bases legais, retenção, transferências e direitos do titular.
-- [ ] Definir processo de exclusão/exportação, resguardando retenções legais.
-- [ ] Definir limpeza de imagens órfãs sem remover versões compradas.
-- [ ] Monitorar `pdf_jobs` pendentes/falhos e estabelecer retentativas proativas.
-- [ ] Testar restauração de backup em ambiente separado.
-- [ ] Confirmar custo e capacidade dos provedores para volume esperado.
-- [ ] Conectar o projeto Vercel ao repositório GitHub para deploy automático e testar um push de homologação.
-- [ ] Promover a versão homologada para produção e executar smoke test final.
-
-**Estado:** a base está implementada e testada localmente; a operação comercial aguarda conexão dos serviços e homologação real. Checklists marcados acima indicam implementação e testes locais, não auditoria da infraestrutura externa ainda ausente.
+Atualização: sistemahotelsp foi excluído pelo proprietário. Criar catalogonailcompleto em InstaFlow AI e reinstalar o banco/função antes de ativar produção. Nenhuma tabela do projeto anterior continua disponível após essa exclusão.

@@ -1,4 +1,5 @@
 import { draftSchema, readyErrors } from "@/lib/catalog";
+import { OFFERS } from "@/lib/offers";
 import {
   adminDb,
   AppError,
@@ -8,8 +9,9 @@ import {
   sameOrigin,
   track,
   rateLimit,
+  jsonBody,
 } from "@/lib/server";
-import { provider } from "@/lib/payments/provider";
+import { wiapyConfigured, wiapyCheckoutUrl } from "@/lib/payments/wiapy";
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -19,55 +21,52 @@ export async function POST(
     const { user } = await identity();
     await rateLimit(user.id, "checkout", 6, 60);
     const { id } = await params;
-    const c = await ownedCatalog(id, user.id);
-    const errors = readyErrors(draftSchema.parse(c.document));
+    const body = await jsonBody(req);
+    const plan: unknown = body.plan;
+    if (plan !== "single" && plan !== "monthly")
+      throw new AppError("Escolha uma das opções de pagamento.");
+    const catalog = await ownedCatalog(id, user.id);
+    const errors = readyErrors(draftSchema.parse(catalog.document));
     if (errors.length) throw new AppError(errors.join(" "));
-    await track("catalog_completed", user.id, id);
-    if (!provider.available)
+    const db = adminDb();
+    if (plan === "monthly") {
+      const access = await db.rpc("monthly_catalog_order", {
+        p_catalog: id,
+        p_user: user.id,
+      });
+      if (access.error) throw access.error;
+      if (access.data)
+        return Response.json({ redirect: `/catalogo/${id}/pagamento` });
+    }
+    if (!wiapyConfigured())
       throw new AppError(
-        "Os pagamentos ainda estão sendo preparados. Seu catálogo está salvo e você poderá voltar para liberá-lo.",
+        "A liberação do PDF estará disponível em breve. Seu catálogo está salvo na sua conta.",
         503,
       );
-    const db = adminDb();
-    const { data: order, error } = await db.rpc("begin_checkout", {
+    const result = await db.rpc("begin_wiapy_checkout", {
       p_catalog: id,
       p_user: user.id,
+      p_plan: plan,
+      p_checkout: OFFERS[plan].checkoutId,
     });
-    if (error) throw error;
+    if (result.error) throw result.error;
+    const order = result.data;
     if (order.status === "paid")
       return Response.json({ redirect: `/catalogo/${id}/pagamento` });
-    if (order.checkout_url)
-      return Response.json({ redirect: order.checkout_url });
-    const claimed = await db.rpc("claim_checkout", {
-      p_order: order.id,
-      p_user: user.id,
-    });
-    if (claimed.error) throw claimed.error;
-    if (!claimed.data)
+    if (order.amount !== OFFERS[plan].priceCents)
       throw new AppError(
-        "Seu pagamento está sendo preparado. Aguarde e use “Verificar pagamento”.",
-        409,
+        "Este plano está sendo atualizado. Tente novamente mais tarde.",
+        503,
       );
-    // Provider MUST use order.id as the gateway idempotency key. Never replace ambiguous transactions.
-    const created = await provider.createPayment(
-      order,
-      `${process.env.APP_URL}/catalogo/${id}/pagamento`,
-    );
-    if (new URL(created.checkoutUrl).protocol !== "https:")
-      throw new Error("INSECURE_CHECKOUT");
-    const result = await db
+    const checkoutUrl = wiapyCheckoutUrl(plan, order);
+    const saved = await db
       .from("orders")
-      .update({
-        gateway_transaction_id: created.transactionId,
-        gateway_order_id: created.gatewayOrderId,
-        checkout_url: created.checkoutUrl,
-        expires_at: created.expiresAt,
-      })
+      .update({ checkout_url: checkoutUrl })
       .eq("id", order.id)
-      .is("gateway_transaction_id", null);
-    if (result.error) throw result.error;
+      .eq("user_id", user.id);
+    if (saved.error) throw saved.error;
     await track("payment_pending", user.id, id, order.id);
-    return Response.json({ redirect: created.checkoutUrl });
+    return Response.json({ checkoutUrl, orderId: order.id });
   } catch (e) {
     return failure(e);
   }

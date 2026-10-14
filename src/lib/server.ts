@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import { cookies } from "next/headers";
 import { DEFAULTS } from "./catalog";
 import { cache } from "react";
+import { backendFetch } from "./backend-fetch";
 export class AppError extends Error {
   constructor(
     message: string,
@@ -16,7 +17,8 @@ export function configured() {
   return !!(
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY &&
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    (process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.SUPABASE_BRIDGE_PRIVATE_KEY)
   );
 }
 export function adminDb() {
@@ -27,12 +29,22 @@ export function adminDb() {
     );
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    {
+      db: { schema: process.env.SUPABASE_DB_SCHEMA || "public" },
+      auth: { persistSession: false, autoRefreshToken: false },
+      ...(process.env.SUPABASE_SERVICE_ROLE_KEY
+        ? {}
+        : { global: { fetch: backendFetch } }),
+    },
   );
 }
 export async function sessionDb() {
-  if (!configured())
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
+  )
     throw new AppError(
       "Estamos preparando a plataforma. Tente novamente em breve.",
       503,
@@ -98,7 +110,10 @@ export const settings = cache(async function settings() {
     .select("value")
     .eq("id", 1)
     .single();
-  if (error) throw error;
+  if (error) {
+    console.error("platform_settings_unavailable", { code: error.code });
+    return DEFAULTS;
+  }
   return { ...DEFAULTS, ...data.value } as typeof DEFAULTS;
 });
 export async function track(

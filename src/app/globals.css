@@ -1112,3 +1112,14 @@ th {
 .compact .plans-grid { grid-template-columns: minmax(0, 1fr); }
 .compact.plan-section h2 { font-size: 28px; }
 @media(max-width: 700px) { .plans-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.guest-save-note { padding: 14px 20px; border: 1px solid #e4d5cd; border-radius: 14px; background: #fbf6f1; color: #67534b; font-size: 14px; }
+.guest-result { max-width: 920px; margin: auto; }
+.locked-preview { position: relative; height: 630px; overflow: hidden; border-radius: 24px; border: 1px solid #e3d8d0; margin: 30px 0; background: #f4eee9; }
+.blurred-catalog, .editor-blur { filter: blur(9px); pointer-events: none; user-select: none; }
+.editor-blur { max-height: 480px; overflow: hidden; }
+.preview-lock { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: min(88%, 470px); text-align: center; box-shadow: 0 20px 80px #35211b25; background: #fffcf8f5; }
+.preview-lock svg { color: #78534f; }
+.preview-lock h2 { font-size: clamp(24px, 4vw, 32px); margin-top: 18px; }
+.hero h1 { letter-spacing: -.045em; }
+@media(max-width: 500px) { .locked-preview { height: 540px; } .preview-lock { padding: 24px 20px; } .topbar .nav .button { padding: 11px 14px; font-size: 12px; } }

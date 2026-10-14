@@ -2,6 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
+import { loadGuest } from "@/lib/guest-draft";
 export function AuthForm({
   mode,
 }: {
@@ -27,8 +28,17 @@ export function AuthForm({
       });
       const d = await r.json();
       if (!r.ok) throw new Error(d.error);
-      if (d.redirect || mode === "logout") location.href = d.redirect || "/";
-      else setMessage(d.message);
+      if (d.redirect || mode === "logout") {
+        let pending = false;
+        if (mode === "login" || mode === "register") {
+          try {
+            pending = !!(await loadGuest());
+          } catch {
+            /* Login works even when local storage is unavailable. */
+          }
+        }
+        location.href = pending ? "/catalogo/continuar" : d.redirect || "/";
+      } else setMessage(d.message);
     } catch (e) {
       setMessage(e instanceof Error ? e.message : "Tente novamente.");
     } finally {

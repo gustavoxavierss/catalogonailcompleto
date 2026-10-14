@@ -2,7 +2,9 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
 import { Catalog, contactHref, money } from "@/lib/catalog";
+import { useImageSource } from "./guest-context";
 export function CatalogPreview({ document: d }: { document: Catalog }) {
+  const imageSource = useImageSource();
   const [qr, setQr] = useState("");
   const target = d.contacts.find(
     (c) => c.visible && c.value && c.kind === d.qr,
@@ -37,7 +39,7 @@ export function CatalogPreview({ document: d }: { document: Catalog }) {
         {d.logo && (
           <img
             className="catalog-logo"
-            src={`/api/images/${d.logo.id}`}
+            src={imageSource(d.logo.id)}
             alt="Logotipo"
           />
         )}
@@ -49,7 +51,7 @@ export function CatalogPreview({ document: d }: { document: Catalog }) {
         {d.cover && (
           <img
             className="cover"
-            src={`/api/images/${d.cover.id}`}
+            src={imageSource(d.cover.id)}
             alt="Capa do catálogo"
           />
         )}
@@ -61,7 +63,7 @@ export function CatalogPreview({ document: d }: { document: Catalog }) {
         {d.portrait && (
           <img
             className="portrait"
-            src={`/api/images/${d.portrait.id}`}
+            src={imageSource(d.portrait.id)}
             alt={d.professional}
           />
         )}
@@ -101,7 +103,7 @@ export function CatalogPreview({ document: d }: { document: Catalog }) {
                 >
                   {s.images[0] && (
                     <img
-                      src={`/api/images/${s.images[0].id}`}
+                      src={imageSource(s.images[0].id)}
                       alt={s.name}
                       style={{
                         borderRadius: d.theme.imageShape === "rounded" ? 8 : 0,
@@ -121,7 +123,7 @@ export function CatalogPreview({ document: d }: { document: Catalog }) {
                       {s.images.slice(1).map((i) => (
                         <img
                           key={i.id}
-                          src={`/api/images/${i.id}`}
+                          src={imageSource(i.id)}
                           alt={s.name}
                           loading="lazy"
                         />

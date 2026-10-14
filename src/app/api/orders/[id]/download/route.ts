@@ -7,6 +7,7 @@ import {
   track,
 } from "@/lib/server";
 import { generatePaidPdf } from "@/lib/pdf";
+import { requireSubscriptionAccess } from "@/lib/subscription-access";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 export async function POST(
@@ -20,7 +21,7 @@ export async function POST(
     const db = adminDb();
     const { data: order, error } = await db
       .from("orders")
-      .select("status,catalog_id")
+      .select("status,catalog_id,user_id,plan,subscription_id")
       .eq("id", id)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -28,6 +29,7 @@ export async function POST(
     if (!order) throw new AppError("Catálogo não encontrado.", 404);
     if (order.status !== "paid")
       throw new AppError("Confirme o pagamento para liberar seu PDF.", 403);
+    await requireSubscriptionAccess(order);
     const file = await generatePaidPdf(id);
     const current = await db
       .from("orders")
@@ -37,6 +39,7 @@ export async function POST(
       .single();
     if (current.error || current.data.status !== "paid")
       throw new AppError("Este pagamento não está aprovado.", 403);
+    await requireSubscriptionAccess(order);
     const signed = await db.storage
       .from("catalog-pdfs")
       .createSignedUrl(file.path, 60, { download: "meu-catalogo.pdf" });
