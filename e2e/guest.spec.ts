@@ -69,10 +69,12 @@ test("cadastro real transfere rascunho e foto; sessão permite edição e saída
     .getByRole("link", { name: "CRIAR CONTA E VER MEU CATÁLOGO" })
     .click();
   await page.getByLabel("Como você se chama?").fill("QA Catálogo");
+  const email = process.env.E2E_REGISTER_EMAIL || `catalog-qa-${randomUUID()}@example.invalid`;
+  const password = randomUUID() + "aA1!";
   await page
     .getByLabel("Seu e-mail")
-    .fill(`catalog-qa-${randomUUID()}@example.invalid`);
-  await page.getByLabel(/^Sua senha/).fill(randomUUID() + "aA1!");
+    .fill(email);
+  await page.getByLabel(/^Sua senha/).fill(password);
   await page.getByRole("checkbox").check();
   await page
     .getByRole("button", { name: "Criar minha conta", exact: true })
@@ -103,4 +105,9 @@ test("cadastro real transfere rascunho e foto; sessão permite edição e saída
   await page.waitForURL("/");
   await page.goto("/dashboard");
   await page.waitForURL("**/login");
+  await page.getByLabel("Seu e-mail").fill(email);
+  await page.getByLabel(/^Sua senha/).fill(password);
+  await page.getByRole("button", { name: "Entrar na minha conta" }).click();
+  await page.waitForURL("**/dashboard");
+  await expect(page.getByText("Ana Teste", { exact: true }).first()).toBeVisible();
 });

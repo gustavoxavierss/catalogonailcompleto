@@ -7,12 +7,13 @@ A visitante começa em /catalogo/novo sem login. Texto e fotos ficam no IndexedD
 
 O desfoque é uma etapa visual de conversão, não proteção criptográfica: os dados foram fornecidos pela própria visitante. O PDF final tem controle de acesso real no servidor e nunca é entregue pela prévia.
 
-## Banco preparado
-O projeto anterior sistemahotelsp foi excluído pelo proprietário. O novo projeto catalogonailcompleto deve ser criado em InstaFlow AI. A estrutura está pronta no esquema nail_catalog e precisa ser reinstalada no novo projeto.
+## Banco instalado
+Projeto catalogonailcompleto: aottersnvaumwgxsmqvl, organização InstaFlow AI, São Paulo. Banco nail_catalog instalado, com 19 tabelas e RLS ativo, buckets privados e função nail-backend. A Vercel está conectada ao novo projeto.
 
 Para reproduzir em outro projeto:
 1. Execute supabase/catalog-platform.sql uma vez.
 2. Execute supabase/wiapy-payments.sql uma vez.
+   Em seguida, execute supabase/catalog-order-relation.sql para a consulta do painel.
 3. Exponha nail_catalog na Data API (configuração de schemas expostos).
 4. Configure URL, chave publicável e acesso privilegiado somente no servidor.
 5. Configure Auth Site URL = APP_URL e redirects para APP_URL/auth/callback e APP_URL/auth/callback?next=/redefinir-senha.
@@ -23,7 +24,9 @@ Tabelas: profiles, admin_users, catalogs, categories, services, service_images, 
 ## Acesso do servidor
 Alternativa à service role na Vercel: supabase/functions/nail-backend/index.ts verifica assinaturas Ed25519, timestamp de 30 segundos e nonce único. Só aceita tabelas, RPCs e buckets autorizados. A service role permanece dentro do Supabase. A chave pública fica no código; a privada SUPABASE_BRIDGE_PRIVATE_KEY fica exclusivamente no servidor Next.js. Para outra instalação, gere outro par de chaves e substitua a pública antes de publicar a função.
 
-A configuração pública anterior da Vercel ainda aponta para o projeto excluído e deve ser substituída diretamente pela configuração do projeto novo. A chave privada SUPABASE_BRIDGE_PRIVATE_KEY foi autorizada pelo proprietário e salva como segredo de produção na Vercel. O backend continua pendente até criar o novo Supabase, instalar banco/função e atualizar URL/chave pública. Não publicar novamente com a configuração antiga do projeto excluído.
+A configuração pública e a chave privada autorizada estão salvas na Vercel. A ponte assinada passou nos testes de leitura, assinatura e rejeição de replay.
+
+A confirmação de e-mail foi desativada pelo proprietário para permitir cadastro imediato com senha. Recuperação de senha continua dependente de SMTP. O pagamento permanece desativado até configurar o token Wiapy.
 
 ## Desenvolvimento
 Node.js 24. Execute npm ci, copie .env.example para .env.local, preencha o ambiente e rode npm run dev.
@@ -45,9 +48,3 @@ O adaptador Wiapy está em src/lib/payments/wiapy.ts. Continua desativado até c
 Leia docs/GATEWAY.md, docs/VERIFICACAO.md e docs/LANCAMENTO.md.
 
 Termos e privacidade são bases iniciais: preencher responsável, suporte e política de retenção antes de vender. O evento pdf_downloaded registra entrega do link autorizado, não conclusão do download. Links assinados valem 60 segundos; arquivos já baixados não podem ser revogados.
-
-## Atualização após exclusão do projeto antigo
-O proprietário excluiu sistemahotelsp durante esta execução. O cadastro e a transferência tinham passado no teste real antes da exclusão; essa configuração deixou de existir. O projeto novo catalogonailcompleto está aguardando criação em InstaFlow AI. O conector de criação exige confirm_cost_id, mas get_cost está indisponível. Não foram apagados arquivos de código. Após criar o projeto, reaplique catalog-platform.sql e wiapy-payments.sql, publique a Edge Function e atualize as variáveis locais e da Vercel. Repita o teste conectado no projeto novo.
-
-Build de produção concluído com sucesso; 49 testes passaram. O fluxo real de cadastro, transferência da foto e saída passou antes da exclusão do Supabase antigo. Não interpretar esses resultados como validação do projeto novo ainda não criado.
-
