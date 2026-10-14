@@ -7,8 +7,8 @@ A visitante começa em /catalogo/novo sem login. Texto e fotos ficam no IndexedD
 
 O desfoque é uma etapa visual de conversão, não proteção criptográfica: os dados foram fornecidos pela própria visitante. O PDF final tem controle de acesso real no servidor e nunca é entregue pela prévia.
 
-## Banco instalado
-Projeto Supabase xfoeeemkgpksskdfozka (sistemahotelsp), esquema exclusivo nail_catalog. As tentativas autorizadas de remover o legado do hotel falharam no conector; as tabelas antigas continuam em public. Não excluir auth.users indiscriminadamente: as contas são compartilhadas pelo projeto.
+## Banco preparado
+O projeto anterior sistemahotelsp foi excluído pelo proprietário. O novo projeto catalogonailcompleto deve ser criado em InstaFlow AI. A estrutura está pronta no esquema nail_catalog e precisa ser reinstalada no novo projeto.
 
 Para reproduzir em outro projeto:
 1. Execute supabase/catalog-platform.sql uma vez.
@@ -23,7 +23,7 @@ Tabelas: profiles, admin_users, catalogs, categories, services, service_images, 
 ## Acesso do servidor
 Alternativa à service role na Vercel: supabase/functions/nail-backend/index.ts verifica assinaturas Ed25519, timestamp de 30 segundos e nonce único. Só aceita tabelas, RPCs e buckets autorizados. A service role permanece dentro do Supabase. A chave pública fica no código; a privada SUPABASE_BRIDGE_PRIVATE_KEY fica exclusivamente no servidor Next.js. Para outra instalação, gere outro par de chaves e substitua a pública antes de publicar a função.
 
-A configuração pública foi instalada na Vercel. O envio da chave privada foi bloqueado pela revisão automática e depende de autorização explícita. Até resolver isso, o backend de produção não está operacional, embora a criação local sem conta funcione.
+A configuração pública anterior da Vercel ainda aponta para o projeto excluído e deve ser substituída diretamente pela configuração do projeto novo. O envio da chave privada foi bloqueado pela revisão automática e depende de autorização explícita. Até resolver isso, o backend de produção não está operacional, embora a criação local sem conta funcione.
 
 ## Desenvolvimento
 Node.js 24. Execute npm ci, copie .env.example para .env.local, preencha o ambiente e rode npm run dev.
@@ -50,3 +50,4 @@ Termos e privacidade são bases iniciais: preencher responsável, suporte e pol�
 O proprietário excluiu sistemahotelsp durante esta execução. O cadastro e a transferência tinham passado no teste real antes da exclusão; essa configuração deixou de existir. O projeto novo catalogonailcompleto está aguardando criação em InstaFlow AI. O conector de criação exige confirm_cost_id, mas get_cost está indisponível. Não foram apagados arquivos de código. Após criar o projeto, reaplique catalog-platform.sql e wiapy-payments.sql, publique a Edge Function e atualize as variáveis locais e da Vercel. Repita o teste conectado no projeto novo.
 
 Build de produção concluído com sucesso; 49 testes passaram. O fluxo real de cadastro, transferência da foto e saída passou antes da exclusão do Supabase antigo. Não interpretar esses resultados como validação do projeto novo ainda não criado.
+
