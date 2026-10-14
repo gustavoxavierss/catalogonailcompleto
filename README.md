@@ -23,7 +23,7 @@ Tabelas: profiles, admin_users, catalogs, categories, services, service_images, 
 ## Acesso do servidor
 Alternativa à service role na Vercel: supabase/functions/nail-backend/index.ts verifica assinaturas Ed25519, timestamp de 30 segundos e nonce único. Só aceita tabelas, RPCs e buckets autorizados. A service role permanece dentro do Supabase. A chave pública fica no código; a privada SUPABASE_BRIDGE_PRIVATE_KEY fica exclusivamente no servidor Next.js. Para outra instalação, gere outro par de chaves e substitua a pública antes de publicar a função.
 
-A configuração pública anterior da Vercel ainda aponta para o projeto excluído e deve ser substituída diretamente pela configuração do projeto novo. O envio da chave privada foi bloqueado pela revisão automática e depende de autorização explícita. Até resolver isso, o backend de produção não está operacional, embora a criação local sem conta funcione.
+A configuração pública anterior da Vercel ainda aponta para o projeto excluído e deve ser substituída diretamente pela configuração do projeto novo. A chave privada SUPABASE_BRIDGE_PRIVATE_KEY foi autorizada pelo proprietário e salva como segredo de produção na Vercel. O backend continua pendente até criar o novo Supabase, instalar banco/função e atualizar URL/chave pública. Não publicar novamente com a configuração antiga do projeto excluído.
 
 ## Desenvolvimento
 Node.js 24. Execute npm ci, copie .env.example para .env.local, preencha o ambiente e rode npm run dev.

@@ -4,7 +4,7 @@
 Site e GitHub existentes; esquema nail_catalog com RLS e ponte assinada prontos para reinstalação; editor sem conta e importação; planos avulso e mensal; adaptador Wiapy; proteção de PDF e período mensal. O banco anterior foi excluído pelo proprietário.
 
 ## Pendências obrigatórias
-- Autorizar armazenamento de SUPABASE_BRIDGE_PRIVATE_KEY no projeto catalogonailcompleto da Vercel, ambiente production. A revisão automática bloqueou o envio desse segredo; nenhum contorno foi usado.
+- Concluído: SUPABASE_BRIDGE_PRIVATE_KEY autorizada e armazenada como segredo de produção na Vercel.
 - Configurar token forte no painel Wiapy e o mesmo QIAPAY_WEBHOOK_SECRET na Vercel; ativar PAYMENT_PROVIDER=wiapy.
 - Homologar compra real, renovação, recusa, estorno e evento duplicado.
 - Validar recuperação por e-mail com SMTP e redirects de produção.
