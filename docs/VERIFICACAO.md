@@ -19,3 +19,9 @@ Projeto aottersnvaumwgxsmqvl instalado e conectado à produção. As 19 tabelas 
 O proprietário desativou a confirmação de e-mail. O teste real no domínio catalogonailcompleto.vercel.app passou: criar rascunho sem conta, salvar foto e serviço, cadastrar, transferir foto/rascunho, abrir prévia, mostrar planos bloqueados, sair e entrar novamente, e visualizar catálogo no painel. O teste levou 21,2 segundos. Não foram enviados e-mails nem efetuados pagamentos.
 
 Foi corrigida a relação direta entre orders e catalogs usada pelo painel, com FK composta por catálogo/proprietário; migração aplicada e preservada em supabase/catalog-order-relation.sql. Recuperação por e-mail e cobrança real continuam pendentes de SMTP e token Wiapy, respectivamente.
+
+## Wiapy ativada em produção — 14/10/2026
+Token protegido salvo e PAYMENT_PROVIDER=wiapy. Deployment dpl_3qF4kkPkniJZj1CdFja9GnStZRqF READY no domínio principal.
+Teste real de navegador passou (24,5s): cadastro, importação de foto/rascunho, login/logout, planos habilitados, pedidos avulso/mensal com vínculo utm_content, reutilização de pedidos e download recusado com 403 enquanto pendente. Valor adulterado de 1 centavo ignorado: pedidos persistidos com 1990 e 1599 centavos. Webhook sem token ou com token inválido respondeu 400.
+Executar com E2E_BASE_URL, E2E_REAL_REGISTER=1, E2E_PAYMENTS_READY=1, E2E_REGISTER_EMAIL e --project=desktop.
+Nenhuma compra foi efetuada: confirmação real, entrega autenticada da Wiapy, geração final e recorrência ainda precisam de homologação. SMTP para recuperar senha continua pendente.

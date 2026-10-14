@@ -97,9 +97,35 @@ test("cadastro real transfere rascunho e foto; sessão permite edição e saída
   await expect(
     page.getByRole("heading", { name: "Seu catálogo sempre à mão" }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "LIBERAR MEU CATÁLOGO", exact: true }),
-  ).toBeDisabled();
+  const release = page.getByRole("button", { name: "LIBERAR MEU CATÁLOGO", exact: true });
+  if (process.env.E2E_PAYMENTS_READY) {
+    await expect(release).toBeEnabled();
+    const catalogId = new URL(page.url()).pathname.split("/")[2];
+    const origin = new URL(page.url()).origin;
+    for (const plan of ["single", "monthly"]) {
+      const options = { headers: { Origin: origin }, data: { plan, amount: 1 } };
+      const response = await page.request.post(`/api/catalogs/${catalogId}/checkout`, options);
+      expect(response.status()).toBe(200);
+      const order = await response.json();
+      const checkout = new URL(order.checkoutUrl);
+      expect(checkout.origin).toBe("https://pay.wiapy.com");
+      expect(checkout.pathname).toBe(plan === "single" ? "/G5KoHkHx8TSP" : "/6ace76946ebcdbf6682ec046");
+      expect(checkout.searchParams.get("utm_content")).toBe(order.orderId);
+      const repeat = await page.request.post(`/api/catalogs/${catalogId}/checkout`, options);
+      expect(repeat.status()).toBe(200);
+      expect((await repeat.json()).orderId).toBe(order.orderId);
+      const status = await page.request.get(`/api/catalogs/${catalogId}/payment`);
+      expect(status.status()).toBe(200);
+      const saved = (await status.json()).orders.find((item: { id: string }) => item.id === order.orderId);
+      expect(saved.amount).toBe(plan === "single" ? 1990 : 1599);
+      expect(saved.status).toBe("pending");
+      const download = await page.request.post(`/api/orders/${order.orderId}/download`, { headers: { Origin: origin } });
+      expect(download.status()).toBe(403);
+      expect(download.headers()["content-type"]).not.toContain("application/pdf");
+    }
+  } else {
+    await expect(release).toBeDisabled();
+  }
   await page.getByRole("button", { name: "Sair", exact: true }).click();
   await page.getByRole("button", { name: "Sair da minha conta" }).click();
   await page.waitForURL("/");
