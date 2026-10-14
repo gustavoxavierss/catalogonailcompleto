@@ -6,11 +6,19 @@ test("apresentação responsiva conduz ao editor sem cadastro", async ({
   await expect(page.getByRole("heading", { level: 1 })).toContainText(
     "Seu talento",
   );
-  const hero = page.getByAltText(/Catálogo de procedimentos de Mikaelly/);
+  const hero = page.getByAltText(/Referência visual de catálogo editorial/);
   await expect(hero).toBeVisible();
   await expect
     .poll(() => hero.evaluate((el: HTMLImageElement) => el.naturalWidth))
     .toBeGreaterThan(0);
+  const images = page.locator('main img[src*="landing"]');
+  await expect(images).toHaveCount(5);
+  for (const image of await images.all()) {
+    await image.scrollIntoViewIfNeeded();
+    await expect
+      .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
+      .toBeGreaterThan(0);
+  }
   await expect(
     page.getByRole("heading", { name: "Seu catálogo sempre à mão" }),
   ).toBeVisible();
