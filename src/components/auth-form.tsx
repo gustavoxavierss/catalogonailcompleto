@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LoaderCircle } from "lucide-react";
 import { loadGuest } from "@/lib/guest-draft";
@@ -10,6 +10,8 @@ export function AuthForm({
 }) {
   const [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
+  const [ready, setReady] = useState(false);
+  useEffect(() => setReady(true), []);
   async function submit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setBusy(true);
@@ -101,7 +103,7 @@ export function AuthForm({
           {message}
         </p>
       )}
-      <button className="full" disabled={busy}>
+      <button className="full" disabled={!ready || busy}>
         {busy && <LoaderCircle className="spinning" size={18} />}
         {
           {

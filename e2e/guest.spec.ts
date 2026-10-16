@@ -69,21 +69,23 @@ test("cadastro real transfere rascunho e foto; sessão permite edição e saída
     .getByRole("link", { name: "CRIAR CONTA E VER MEU CATÁLOGO" })
     .click();
   await page.getByLabel("Como você se chama?").fill("QA Catálogo");
-  const email = process.env.E2E_REGISTER_EMAIL || `catalog-qa-${randomUUID()}@example.invalid`;
+  const email =
+    process.env.E2E_REGISTER_EMAIL ||
+    `catalog-qa-${randomUUID()}@example.invalid`;
   const password = randomUUID() + "aA1!";
-  await page
-    .getByLabel("Seu e-mail")
-    .fill(email);
+  await page.getByLabel("Seu e-mail").fill(email);
   await page.getByLabel(/^Sua senha/).fill(password);
   await page.getByRole("checkbox").check();
   await page
     .getByRole("button", { name: "Criar minha conta", exact: true })
     .click();
   await page.waitForURL("**/preview", { timeout: 60000 });
+  await page.getByRole("button", { name: "VER SERVIÇOS", exact: true }).click();
   await expect(page.locator(".catalog-preview")).toContainText(
     "Manicure de teste",
   );
-  const image = page.locator(".catalog-preview .portrait");
+  await page.getByRole("button", { name: "Conheça-me", exact: true }).click();
+  const image = page.locator(".catalog-preview img.portrait");
   await expect(image).toBeVisible();
   await expect
     .poll(() => image.evaluate((el: HTMLImageElement) => el.naturalWidth))
@@ -97,31 +99,54 @@ test("cadastro real transfere rascunho e foto; sessão permite edição e saída
   await expect(
     page.getByRole("heading", { name: "Seu catálogo sempre à mão" }),
   ).toBeVisible();
-  const release = page.getByRole("button", { name: "LIBERAR MEU CATÁLOGO", exact: true });
+  const release = page.getByRole("button", {
+    name: "LIBERAR MEU CATÁLOGO",
+    exact: true,
+  });
   if (process.env.E2E_PAYMENTS_READY) {
     await expect(release).toBeEnabled();
     const catalogId = new URL(page.url()).pathname.split("/")[2];
     const origin = new URL(page.url()).origin;
     for (const plan of ["single", "monthly"]) {
-      const options = { headers: { Origin: origin }, data: { plan, amount: 1 } };
-      const response = await page.request.post(`/api/catalogs/${catalogId}/checkout`, options);
+      const options = {
+        headers: { Origin: origin },
+        data: { plan, amount: 1 },
+      };
+      const response = await page.request.post(
+        `/api/catalogs/${catalogId}/checkout`,
+        options,
+      );
       expect(response.status()).toBe(200);
       const order = await response.json();
       const checkout = new URL(order.checkoutUrl);
       expect(checkout.origin).toBe("https://pay.wiapy.com");
-      expect(checkout.pathname).toBe(plan === "single" ? "/G5KoHkHx8TSP" : "/6ace76946ebcdbf6682ec046");
+      expect(checkout.pathname).toBe(
+        plan === "single" ? "/G5KoHkHx8TSP" : "/6ace76946ebcdbf6682ec046",
+      );
       expect(checkout.searchParams.get("utm_content")).toBe(order.orderId);
-      const repeat = await page.request.post(`/api/catalogs/${catalogId}/checkout`, options);
+      const repeat = await page.request.post(
+        `/api/catalogs/${catalogId}/checkout`,
+        options,
+      );
       expect(repeat.status()).toBe(200);
       expect((await repeat.json()).orderId).toBe(order.orderId);
-      const status = await page.request.get(`/api/catalogs/${catalogId}/payment`);
+      const status = await page.request.get(
+        `/api/catalogs/${catalogId}/payment`,
+      );
       expect(status.status()).toBe(200);
-      const saved = (await status.json()).orders.find((item: { id: string }) => item.id === order.orderId);
+      const saved = (await status.json()).orders.find(
+        (item: { id: string }) => item.id === order.orderId,
+      );
       expect(saved.amount).toBe(plan === "single" ? 1990 : 1599);
       expect(saved.status).toBe("pending");
-      const download = await page.request.post(`/api/orders/${order.orderId}/download`, { headers: { Origin: origin } });
+      const download = await page.request.post(
+        `/api/orders/${order.orderId}/download`,
+        { headers: { Origin: origin } },
+      );
       expect(download.status()).toBe(403);
-      expect(download.headers()["content-type"]).not.toContain("application/pdf");
+      expect(download.headers()["content-type"]).not.toContain(
+        "application/pdf",
+      );
     }
   } else {
     await expect(release).toBeDisabled();
@@ -135,5 +160,7 @@ test("cadastro real transfere rascunho e foto; sessão permite edição e saída
   await page.getByLabel(/^Sua senha/).fill(password);
   await page.getByRole("button", { name: "Entrar na minha conta" }).click();
   await page.waitForURL("**/dashboard");
-  await expect(page.getByText("Ana Teste", { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByText("Ana Teste", { exact: true }).first(),
+  ).toBeVisible();
 });

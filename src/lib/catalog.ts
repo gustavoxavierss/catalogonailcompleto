@@ -42,6 +42,8 @@ export const imageSchema = z.object({
   id: z.uuid(),
   path: text(400),
   name: text(120),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
 });
 export const draftSchema = z.object({
   professional: text(100),

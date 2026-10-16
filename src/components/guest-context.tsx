@@ -9,5 +9,6 @@ export const GuestContext = createContext<null | {
 }>(null);
 export function useImageSource() {
   const guest = useContext(GuestContext);
-  return (id: string) => (guest ? guest.urls[id] : `/api/images/${id}`);
+  return (id: string, width?: number) =>
+    guest ? guest.urls[id] : `/api/images/${id}${width ? `?w=${width}` : ""}`;
 }

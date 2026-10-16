@@ -30,21 +30,26 @@ export async function POST(
     )
       throw new AppError("Escolha uma imagem JPG, PNG ou WebP de até 4 MB.");
     let optimized: Buffer;
+    let width: number;
+    let height: number;
     try {
-      optimized = await sharp(Buffer.from(await file.arrayBuffer()), {
+      const output = await sharp(Buffer.from(await file.arrayBuffer()), {
         limitInputPixels: 40000000,
         animated: false,
       })
         .rotate()
         .resize({
-          width: 1800,
-          height: 1800,
+          width: 2400,
+          height: 6400,
           fit: "inside",
           withoutEnlargement: true,
         })
         .flatten({ background: "#ffffff" })
-        .jpeg({ quality: 86, mozjpeg: true })
-        .toBuffer();
+        .jpeg({ quality: 90, mozjpeg: true })
+        .toBuffer({ resolveWithObject: true });
+      optimized = output.data;
+      width = output.info.width;
+      height = output.info.height;
     } catch {
       throw new AppError(
         "Não conseguimos abrir essa foto. Tente outra imagem.",
@@ -68,7 +73,13 @@ export async function POST(
       await db.storage.from("catalog-images").remove([path]);
       throw saved.error;
     }
-    return Response.json({ id: assetId, path, name: file.name.slice(0, 120) });
+    return Response.json({
+      id: assetId,
+      path,
+      name: file.name.slice(0, 120),
+      width,
+      height,
+    });
   } catch (e) {
     return failure(e);
   }

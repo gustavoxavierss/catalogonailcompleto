@@ -73,7 +73,7 @@ function Upload({
     <div>
       <div className="upload-box">
         {value ? (
-          <img src={imageSource(value.id)} alt={label} />
+          <img src={imageSource(value.id, 320)} alt={label} />
         ) : (
           <ImagePlus size={25} style={{ color: "#a48173", marginBottom: 12 }} />
         )}

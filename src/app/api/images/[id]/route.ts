@@ -1,7 +1,7 @@
 import { adminDb, AppError, failure, identity } from "@/lib/server";
 import sharp from "sharp";
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -16,18 +16,20 @@ export async function GET(
     if (error || !data) throw new AppError("Foto não encontrada.", 404);
     const file = await db.storage.from("catalog-images").download(data.path);
     if (file.error) throw file.error;
-    const thumbnail = await sharp(Buffer.from(await file.data.arrayBuffer()))
+    const requested = Number(new URL(req.url).searchParams.get("w") || 1440);
+    const widths = [320, 640, 960, 1440, 2048, 2400];
+    const width = widths.includes(requested) ? requested : 1440;
+    const image = await sharp(Buffer.from(await file.data.arrayBuffer()))
       .resize({
-        width: 720,
-        height: 720,
+        width,
         fit: "inside",
         withoutEnlargement: true,
       })
-      .jpeg({ quality: 80 })
+      .webp({ quality: 88 })
       .toBuffer();
-    return new Response(new Uint8Array(thumbnail), {
+    return new Response(new Uint8Array(image), {
       headers: {
-        "Content-Type": "image/jpeg",
+        "Content-Type": "image/webp",
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
       },

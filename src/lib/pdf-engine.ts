@@ -16,6 +16,7 @@ import {
   endPath,
 } from "pdf-lib";
 import QRCode from "qrcode";
+import sharp from "sharp";
 import { Catalog, contactHref, money } from "./catalog";
 export async function renderCatalogPdf(
   d: Catalog,
@@ -106,58 +107,90 @@ export async function renderCatalogPdf(
     }
     y -= 8;
   }
-  async function photo(path: string, height: number) {
+  async function photo(path: string, height: number, logo = false) {
     if (y - height < 60) newPage();
-    const img = await pdf.embedJpg(await loadImage(path));
+    const bytes = await loadImage(path);
+    const img = await pdf.embedJpg(bytes);
     const ratio = Math.min(499 / img.width, height / img.height);
     const w = img.width * ratio,
       h = img.height * ratio;
-    const x = (595.28 - w) / 2,
-      bottom = y - h;
+    const framed = !logo && w < 498;
+    const frameHeight = framed ? height : h;
+    const frameWidth = framed ? 499 : w;
+    const frameX = (595.28 - frameWidth) / 2;
+    const x = (595.28 - w) / 2;
+    const bottom = y - frameHeight;
     if (d.theme.imageShape === "rounded") {
-      const r = Math.min(12, w / 4, h / 4),
+      const r = Math.min(12, frameWidth / 4, frameHeight / 4),
         k = r * 0.55228475;
       page.pushOperators(
         pushGraphicsState(),
-        moveTo(x + r, bottom),
-        lineTo(x + w - r, bottom),
+        moveTo(frameX + r, bottom),
+        lineTo(frameX + frameWidth - r, bottom),
         appendBezierCurve(
-          x + w - r + k,
+          frameX + frameWidth - r + k,
           bottom,
-          x + w,
+          frameX + frameWidth,
           bottom + r - k,
-          x + w,
+          frameX + frameWidth,
           bottom + r,
         ),
-        lineTo(x + w, bottom + h - r),
+        lineTo(frameX + frameWidth, bottom + frameHeight - r),
         appendBezierCurve(
-          x + w,
-          bottom + h - r + k,
-          x + w - r + k,
-          bottom + h,
-          x + w - r,
-          bottom + h,
+          frameX + frameWidth,
+          bottom + frameHeight - r + k,
+          frameX + frameWidth - r + k,
+          bottom + frameHeight,
+          frameX + frameWidth - r,
+          bottom + frameHeight,
         ),
-        lineTo(x + r, bottom + h),
+        lineTo(frameX + r, bottom + frameHeight),
         appendBezierCurve(
-          x + r - k,
-          bottom + h,
-          x,
-          bottom + h - r + k,
-          x,
-          bottom + h - r,
+          frameX + r - k,
+          bottom + frameHeight,
+          frameX,
+          bottom + frameHeight - r + k,
+          frameX,
+          bottom + frameHeight - r,
         ),
-        lineTo(x, bottom + r),
-        appendBezierCurve(x, bottom + r - k, x + r - k, bottom, x + r, bottom),
+        lineTo(frameX, bottom + r),
+        appendBezierCurve(
+          frameX,
+          bottom + r - k,
+          frameX + r - k,
+          bottom,
+          frameX + r,
+          bottom,
+        ),
         closePath(),
         clip(),
         endPath(),
       );
     }
-    page.drawImage(img, { x, y: bottom, width: w, height: h });
+    if (framed) {
+      const background = await sharp(bytes)
+        .resize(998, Math.round(frameHeight * 2), { fit: "cover" })
+        .blur(25)
+        .modulate({ brightness: 0.65 })
+        .jpeg({ quality: 80 })
+        .toBuffer();
+      const blurred = await pdf.embedJpg(background);
+      page.drawImage(blurred, {
+        x: frameX,
+        y: bottom,
+        width: frameWidth,
+        height: frameHeight,
+      });
+    }
+    page.drawImage(img, {
+      x,
+      y: bottom + (frameHeight - h) / 2,
+      width: w,
+      height: h,
+    });
     if (d.theme.imageShape === "rounded")
       page.pushOperators(popGraphicsState());
-    y -= h + 24;
+    y -= frameHeight + 24;
   }
   function link(label: string, url: string) {
     if (y < 85) newPage();
@@ -186,14 +219,14 @@ export async function renderCatalogPdf(
   });
   text("CATÁLOGO DE SERVIÇOS", 10, bold, accent);
   y -= 22;
-  if (d.logo) await photo(d.logo.path, 90);
+  if (d.logo) await photo(d.logo.path, 90, true);
   text(d.business || d.professional, 34, heading, ink);
   if (d.business && d.professional) text(d.professional, 15);
-  if (d.cover) await photo(d.cover.path, 400);
+  if (d.cover) await photo(d.cover.path, 420);
   text("Cuidado, beleza e um momento só seu.", 15, heading, ink);
   newPage();
   text("Prazer em conhecer você", 28, heading, ink);
-  if (d.portrait) await photo(d.portrait.path, 230);
+  if (d.portrait) await photo(d.portrait.path, 360);
   text(d.professional, 19, heading, ink);
   text(
     d.about || "Conheça meus serviços e encontre seu próximo cuidado favorito.",
@@ -219,7 +252,17 @@ export async function renderCatalogPdf(
         });
       text(cat.name.toUpperCase(), 10, bold, accent);
       text(s.name, 27, heading, ink);
-      if (s.images[0]) await photo(s.images[0].path, 320);
+      const detailsSpace =
+        200 +
+        Math.min(200, Math.ceil(s.description.length / 80) * 30) +
+        (s.promotion !== null ? 40 : 0) +
+        (s.duration ? 38 : 0) +
+        (s.note ? Math.min(100, Math.ceil(s.note.length / 75) * 30) : 0);
+      if (s.images[0])
+        await photo(
+          s.images[0].path,
+          Math.min(440, Math.max(250, y - detailsSpace)),
+        );
       text(s.description);
       if (s.promotion !== null) {
         text(`De ${money(s.price)}`, 12);

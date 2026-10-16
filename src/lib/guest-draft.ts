@@ -74,7 +74,7 @@ export async function saveGuestPhoto(file: File): Promise<CatalogImage> {
     throw new Error("Escolha uma imagem JPG, PNG ou WebP com até 4 MB.");
   const bitmap = await createImageBitmap(file);
   try {
-    const ratio = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height));
+    const ratio = Math.min(1, 2400 / bitmap.width, 6400 / bitmap.height);
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(bitmap.width * ratio));
     canvas.height = Math.max(1, Math.round(bitmap.height * ratio));
@@ -87,12 +87,18 @@ export async function saveGuestPhoto(file: File): Promise<CatalogImage> {
       canvas.toBlob(
         (b) => (b ? resolve(b) : reject(new Error("Escolha outra foto."))),
         "image/jpeg",
-        0.88,
+        0.9,
       ),
     );
     const id = crypto.randomUUID();
     await write("photo:" + id, blob);
-    return { id, path: "guest/" + id, name: file.name.slice(0, 120) };
+    return {
+      id,
+      path: "guest/" + id,
+      name: file.name.slice(0, 120),
+      width: canvas.width,
+      height: canvas.height,
+    };
   } finally {
     bitmap.close();
   }
